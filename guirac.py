@@ -9,6 +9,10 @@ from PyQt5.QtCore import QSettings,Qt,QPoint,QTimer
 cfg = QSettings('guirac','guirac')
 
 DEBUG = False
+
+COPIRIGHT = 'GUIRac v 1.0-2 (12.01.2020). Copyright © 2020 Oleg Kochkin. License GPL.'
+# https://github.com/OlegKochkin/guirac,
+
 RAS_PORT = cfg.value('RASPort','1545')
 RAC = cfg.value('RACPath','/opt/1C/v8.3/x86_64/rac')
 WORK_HOST = (os.uname()[1]).rstrip().upper()
@@ -31,7 +35,7 @@ class fm(QtWidgets.QMainWindow):
 	def __init__(self):
 		QtWidgets.QMainWindow.__init__(self)
 		uic.loadUi('ui/mainwindow.ui', self)
-		self.setWindowTitle("GUIRac v 1.0-2 (12.01.2020). Copyright © 2020 Oleg Kochkin. License GPL.")
+		self.setWindowTitle(COPIRIGHT)
 		self.StatusBarStyle = self.statusBar().styleSheet()
 		self.resize(cfg.value('Width',1000,type=int),cfg.value('Height',500,type=int))
 		self.setGeometry(cfg.value('Left',50,type=int),
@@ -164,12 +168,11 @@ class fm(QtWidgets.QMainWindow):
 								item.setText(5,admin['os-user'])
 								item.setText(6,admin['descr'])
 								self.admins_cap.addChild(item)
-					
 #				expanded = False
 
 	def getClasterAdmins(self,cluster,host,port):
 		admins = []
-		log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
+		auth_cluster = self.getSessionAuth(cluster,'cluster')
 		cmd = CMD_PREFIX + ' ' + RAC + ' cluster admin list --cluster=' + cluster + ' ' + auth_cluster + host + ':' + port
 		if DEBUG: print (cmd)
 		ret,err = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE).communicate()
@@ -226,15 +229,11 @@ class fm(QtWidgets.QMainWindow):
 			cfg.sync()
 
 	def getSessionAuth(self,id,type):
-		ret = ['','','']
+		ret = ' '
 		if id in self.sessionLogins:
 			if 'login' in self.sessionLogins[id]:
-				ret[0] = self.sessionLogins[id]['login']
-				ret[1] = self.sessionLogins[id]['passwd']
 				if len(ret[0]) > 0:
-					ret[2] = ' --' + type + '-user=' + ret[0] + ' --' + type +'-pwd=' + ret[1] + ' '
-				else:
-					ret[2] = ' '
+					ret = ' --' + type + '-user=' + self.sessionLogins[id]['login'] + ' --' + type +'-pwd=' + self.sessionLogins[id]['passwd'] + ' '
 		return ret
 
 	def getSessions(self):
@@ -246,7 +245,7 @@ class fm(QtWidgets.QMainWindow):
 		host = self.tree.currentItem().text(1)
 		port = self.tree.currentItem().text(2)
 		cluster = self.tree.currentItem().text(3)
-		log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
+		auth_cluster = self.getSessionAuth(cluster,'cluster')
 		cmd = CMD_PREFIX + ' ' + RAC + ' session list --cluster=' + cluster + ' ' + auth_cluster + host + ':' + port
 		if DEBUG: print (cmd)
 		ret,err = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE).communicate()
@@ -331,7 +330,7 @@ class fm(QtWidgets.QMainWindow):
 		host = self.tree.currentItem().text(1)
 		port = self.tree.currentItem().text(2)
 		cluster = self.tree.currentItem().text(3)
-		log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
+		auth_cluster = self.getSessionAuth(cluster,'cluster')
 		for i in indexes:
 			if i.row() != prev_row:
 				sel_ses.append(self.tRight.item(i.row(),0).text())
@@ -425,8 +424,8 @@ class fm(QtWidgets.QMainWindow):
 					drop_database = ' --clear-database'
 			repeat = True
 			while(repeat):
-				log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
-				log_base, pas_base, auth_base = self.getSessionAuth(infobase,'infobase')
+				auth_cluster = self.getSessionAuth(cluster,'cluster')
+				auth_base = self.getSessionAuth(infobase,'infobase')
 				cmd = CMD_PREFIX + ' ' + RAC + ' infobase --cluster='+cluster + ' drop --infobase=' + infobase + drop_database + clear_database + auth_cluster + auth_base + ' ' + host + ':' + port
 				if DEBUG: print (cmd)
 				ret,err = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE).communicate()
@@ -436,7 +435,7 @@ class fm(QtWidgets.QMainWindow):
 					if DEBUG: print('Есть ошибки:',err)
 					if ERR_BASE_RIGHTS in err:
 						self.Mess('warn',ERR_BASE_RIGHTS + ' '+name+' на '+host+':'+port)
-						if not self.BaseLogPass(): repeat = False
+						if not self.BaseLogPass(name,host,port): repeat = False
 				else:
 					repeat = False
 					if DEBUG: print('ret:',ret)
@@ -480,7 +479,7 @@ class fm(QtWidgets.QMainWindow):
 			createdatabase = ''
 			if self.dlgBaseCreate.cbDBCreate.isChecked(): createdatabase = '--create-database '
 
-			log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
+			auth_cluster = self.getSessionAuth(cluster,'cluster')
 			self.Mess('info','Создание базы '+name+' на '+host+':'+port)
 			app.processEvents()
 			cmd = CMD_PREFIX + ' ' + RAC + ' infobase --cluster=' + cluster + ' create ' + createdatabase + '--name='+name + ' --dbms=' + dbms+' --db-server=' + dbserver + ' --db-name=' + dbname + ' --locale=ru --db-user=' + dbuser+' --db-pwd=' + dbpwd + ' --license-distribution=' + lic + ' --descr=' + descr + ' ' + auth_cluster + host + ':' + port
@@ -511,8 +510,8 @@ class fm(QtWidgets.QMainWindow):
 		cluster = self.tree.currentItem().text(4)
 		repeat = True
 		while(repeat):
-			log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
-			log_base, pas_base, auth_base = self.getSessionAuth(infobase,'infobase')
+			auth_cluster = self.getSessionAuth(cluster,'cluster')
+			auth_base = self.getSessionAuth(infobase,'infobase')
 			self.Mess('info','Получение свойств базы '+name+' на '+host+':'+port)
 			app.processEvents()
 			cmd = CMD_PREFIX + ' ' + RAC + ' infobase info --cluster=' + cluster + ' --infobase=' + infobase + auth_cluster + auth_base + host + ':' + port
@@ -524,10 +523,10 @@ class fm(QtWidgets.QMainWindow):
 				if DEBUG: print('Есть ошибки:',err)
 				if ERR_CLUSTER_RIGHTS in err:
 					self.Mess('warn',ERR_CLUSTER_RIGHTS + ' ' + host + ':' + port)
-					if not self.clusterLogPass(cluster): repeat = False
+					if not self.clusterLogPass(cluster,host,port): repeat = False
 				if ERR_BASE_RIGHTS in err:
 					self.Mess('warn',ERR_BASE_RIGHTS + ' '+name+' на '+host+':'+port)
-					if not self.BaseLogPass(): repeat = False
+					if not self.BaseLogPass(name,host,port): repeat = False
 			else:
 				repeat = False
 				if DEBUG: print('ret:',ret)
@@ -635,13 +634,13 @@ class fm(QtWidgets.QMainWindow):
 			self.MessOff()
 		return return_flag
 
-	def clusterLogPass(self,cluster):
+	def clusterLogPass(self,cluster,host,port):
 		self.dlgLogPass = QtWidgets.QDialog()
 		uic.loadUi('ui/log_pass.ui',self.dlgLogPass)
 		self.dlgLogPass.gbUser.setTitle('Имя администратора кластера')
 		self.dlgLogPass.gbPasswd.setTitle('Пароль администратора кластера')
 		self.dlgLogPass.cbSave.setText('Сохранить логин и пароль для этого кластера в в файле конфигурации')
-		self.dlgLogPass.setWindowTitle('Аутентификация кластера')
+		self.dlgLogPass.setWindowTitle('Аутентификация кластера на '+host+':'+port)
 		def_logins = cfg.value('DefaultLogins',{})
 		if 'user1c' in def_logins and 'passwd1c' in def_logins:
 			self.dlgLogPass.eLogin.setText(def_logins['user1c'])
@@ -658,13 +657,13 @@ class fm(QtWidgets.QMainWindow):
 				cfg.sync()
 		return ret
 		
-	def BaseLogPass(self):
+	def BaseLogPass(self,name,host,port):
 		self.dlgLogPass = QtWidgets.QDialog()
 		uic.loadUi('ui/log_pass.ui',self.dlgLogPass)
 		self.dlgLogPass.gbUser.setTitle('Имя администратора базы')
 		self.dlgLogPass.gbPasswd.setTitle('Пароль администратора базы')
 		self.dlgLogPass.cbSave.setText('Сохранить логин и пароль для этой базы в в файле конфигурации')
-		self.dlgLogPass.setWindowTitle('Аутентификация базы')
+		self.dlgLogPass.setWindowTitle('Аутентификация базы '+name+' на '+host+':'+port)
 		infobase = self.tree.currentItem().text(1)
 		def_logins = cfg.value('DefaultLogins',{})
 		if 'user1c' in def_logins and 'passwd1c' in def_logins:
@@ -687,7 +686,7 @@ class fm(QtWidgets.QMainWindow):
 		app.processEvents()
 		repeat = True
 		while(repeat):
-			log_cluster, pas_cluster, auth_cluster = self.getSessionAuth(cluster,'cluster')
+			auth_cluster = self.getSessionAuth(cluster,'cluster')
 			self.Mess('info','Получение списка баз на '+host+':'+port)
 			app.processEvents()
 			cmd = CMD_PREFIX + ' ' + RAC + ' infobase --cluster=' + cluster + ' summary list ' + auth_cluster + host + ':' + port
@@ -700,7 +699,7 @@ class fm(QtWidgets.QMainWindow):
 				if DEBUG: print('Есть ошибки:',err)
 				if ERR_CLUSTER_RIGHTS in err:
 					self.Mess('warn',ERR_CLUSTER_RIGHTS + ' ' + host + ':' + port)
-					if not self.clusterLogPass(cluster): repeat = False
+					if not self.clusterLogPass(cluster,host,port): repeat = False
 			else:
 				repeat = False
 				return_flag = True
@@ -718,7 +717,7 @@ class fm(QtWidgets.QMainWindow):
 						hash = {'infobase':'','name':'',lastkey:''}
 		self.MessOff()
 		return return_flag
-		
+
 	def closeEvent(self, event):
 		cfg.setValue('Hosts',self.hosts)
 #		cfg.setValue('Logins',self.savedLogins)
