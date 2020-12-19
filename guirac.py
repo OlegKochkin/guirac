@@ -260,8 +260,10 @@ class fm(QtWidgets.QMainWindow):
 			self.Sessions = []
 			session = {}
 			i = 0
+			start_session = False
 			for line in ar:
 				if line.find(' : ') > 0:
+					start_session = True
 					key = (line.split(' : '))[0].strip()
 					value = (line.split(' : '))[1].strip()
 					session[key] = value
@@ -271,10 +273,11 @@ class fm(QtWidgets.QMainWindow):
 								session['base-name'] = b['name']
 					if key == 'host':
 						session['ras-port'] = port
-					if key == 'data-separation':
-						self.Sessions.append(session)
-						session = {}
-						i = i+1
+				if line == '' and start_session:
+					self.Sessions.append(session)
+					session = {}
+					i = i+1
+					start_session = False
 			if len(self.Sessions) > 0:
 				labels = []
 				for l in self.Sessions[0]:
