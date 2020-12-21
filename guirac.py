@@ -295,6 +295,9 @@ class fm(QtWidgets.QMainWindow):
 					if s == 'host':
 						self.tRight.showColumn(i)
 						self.tRight.horizontalHeaderItem(i).setText('Узел')
+					if s == 'client-ip':
+						self.tRight.showColumn(i)
+						self.tRight.horizontalHeaderItem(i).setText('IP клиента')
 					if s == 'app-id':
 						self.tRight.showColumn(i)
 						self.tRight.horizontalHeaderItem(i).setText('Приложение')
