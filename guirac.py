@@ -10,7 +10,7 @@ cfg = QSettings('guirac','guirac')
 
 DEBUG = False
 
-COPIRIGHT = 'GUIRac v 1.0-2 (12.01.2020). Copyright © 2020 Oleg Kochkin. License GPL.'
+COPIRIGHT = 'GUIRac v 1.0-3 (19.12.2020). Copyright © 2020 Oleg Kochkin. License GPL.'
 # https://github.com/OlegKochkin/guirac,
 
 RAS_PORT = cfg.value('RASPort','1545')
